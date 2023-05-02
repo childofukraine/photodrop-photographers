@@ -26,7 +26,7 @@
 #### cookies: refreshToken - yourRefreshToken
 #### After refreshing tokens you will gain new access token in response.body and new refresh token in cookies
 #
-### [GET] /auth/me
+### [GET] /me
 #### body: none
 #### headers: ["authorization"]: access_token
 - check access token expiration
