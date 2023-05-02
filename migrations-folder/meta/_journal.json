@@ -1,0 +1,13 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1682600736377,
+      "tag": "0000_melodic_ghost_rider",
+      "breakpoints": false
+    }
+  ]
+}
