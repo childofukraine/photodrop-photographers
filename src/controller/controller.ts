@@ -10,12 +10,19 @@ import {
   SignUpResponse,
   TypedResponse,
   UserLogin,
+  CreateAlbumRequest,
+  CreateAlbumResponse,
+  GetAlbumByIdResponse,
+  GetAllAlbumsResponse,
 } from "../types";
 import { UserRepository } from "../repositories/user";
 import User from "../entities/user";
 import { createTokens } from "../libs/jwtTokens";
 import { Session } from "../entities/session";
 import { SessionRepository } from "../repositories/session";
+import { getUserIdFromToken } from "../libs/getUserIdFromToken";
+import { Album } from "../entities/album";
+import { AlbumRepository } from "../repositories/album";
 
 export class Controller {
   static getAllUsers: RequestHandler = async (
@@ -80,10 +87,8 @@ export class Controller {
 
       // session expire in - 5 days
       const refreshTokenExpTime = Math.floor(Date.now() + 432000000);
-      
-      const sessionExpireTimestamp = new Date(
-        refreshTokenExpTime
-      );
+
+      const sessionExpireTimestamp = new Date(refreshTokenExpTime);
 
       const newSession = new Session(
         uuid(),
@@ -131,9 +136,7 @@ export class Controller {
       const newTokens = createTokens(session[0].userId);
 
       const refreshTokenExpTime = Math.floor(Date.now() + 432000000);
-      const sessionExpireTimestamp = new Date(
-        refreshTokenExpTime
-      );
+      const sessionExpireTimestamp = new Date(refreshTokenExpTime);
 
       const newSession = new Session(
         session[0].sessionId,
@@ -163,5 +166,67 @@ export class Controller {
     res: TypedResponse<{ message: string }>
   ) => {
     res.json({ message: "ok" });
+  };
+
+  static createAlbum: RequestHandler = async (
+    req: CreateAlbumRequest,
+    res: TypedResponse<CreateAlbumResponse>,
+    next
+  ) => {
+    const userId = getUserIdFromToken(
+      req.header("Authorization")?.replace("Bearer ", "")!
+    );
+    const { name, location } = req.body;
+
+    try {
+      const createdAt = new Date(Date.now());
+
+      const newAlbum = new Album(uuid(), name, location, createdAt, userId);
+
+      await AlbumRepository.saveAlbum(newAlbum);
+
+      res.json({ message: "Album created", album: newAlbum });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  static getAlbumById: RequestHandler = async (
+    req,
+    res: TypedResponse<GetAlbumByIdResponse>,
+    next
+  ) => {
+    const { albumId } = req.params;
+
+    try {
+      const albumWithPhotos = await AlbumRepository.getAlbumWithPhotosById(
+        albumId
+      );
+      if (!albumWithPhotos) throw Boom.notFound();
+
+      res.json({ data: albumWithPhotos });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  static getAllAlbums: RequestHandler = async (
+    req,
+    res: TypedResponse<GetAllAlbumsResponse>,
+    next
+  ) => {
+    const userId = getUserIdFromToken(
+      req.header("Authorization")?.replace("Bearer ", "")!
+    );
+
+    try {
+      const albums = await AlbumRepository.getAllAlbumsByUserId(userId);
+
+      if (!albums) throw Boom.notFound();
+
+      res.json({ data: albums });
+    } catch (err) {
+      next(err);
+    }
   };
 }

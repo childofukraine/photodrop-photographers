@@ -31,3 +31,25 @@
 #### headers: ["authorization"]: access_token
 - check access token expiration
 #
+### [POST] /create-album
+#### body: JSON
+```json
+{
+	"name": "Album Name", // required field
+	"location": "Kyiv", // required field
+	"datapicker": "Bob" // required field
+}
+```
+#### headers: ["authorization"]: access_token
+#### You will create new album with data from body
+#
+### [GET] /get-album/:albumId
+#### body: none
+#### headers: ["authorization"]: access_token
+#### You will get your album with photos by album_id
+#
+### [GET] /all-albums
+#### body: none
+#### headers: ["authorization"]: access_token
+#### You will get all yours albums
+#
