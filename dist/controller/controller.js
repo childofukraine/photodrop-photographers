@@ -17,6 +17,7 @@ exports.Controller = void 0;
 const boom_1 = __importDefault(require("@hapi/boom"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const uuid_1 = require("uuid");
+const path_1 = __importDefault(require("path"));
 const user_1 = require("../repositories/user");
 const user_2 = __importDefault(require("../entities/user"));
 const jwtTokens_1 = require("../libs/jwtTokens");
@@ -25,6 +26,13 @@ const session_2 = require("../repositories/session");
 const getUserIdFromToken_1 = require("../libs/getUserIdFromToken");
 const album_1 = require("../entities/album");
 const album_2 = require("../repositories/album");
+const watermark_1 = require("../libs/watermark");
+const thumbnail_1 = require("../libs/thumbnail");
+const convertToPng_1 = require("../libs/convertToPng");
+const photo_1 = require("../entities/photo");
+const s3_1 = require("../libs/s3");
+const photo_2 = require("../repositories/photo");
+const pathToWatermark = path_1.default.join(__dirname, "..", "..", "/templates", "watermark_template.svg");
 class Controller {
 }
 exports.Controller = Controller;
@@ -151,6 +159,31 @@ Controller.getAllAlbums = (req, res, next) => __awaiter(void 0, void 0, void 0, 
         if (!albums)
             throw boom_1.default.notFound();
         res.json({ data: albums });
+    }
+    catch (err) {
+        next(err);
+    }
+});
+Controller.uploadPhotos = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const albumId = req.body.album;
+    const { clients } = req.body;
+    const files = req.files;
+    try {
+        files.forEach((f) => __awaiter(void 0, void 0, void 0, function* () {
+            var _d, _e;
+            let file = f.buffer;
+            let extName = (_d = f.originalname.split(".").pop()) === null || _d === void 0 ? void 0 : _d.toLowerCase();
+            if (((_e = f.originalname.split(".").pop()) === null || _e === void 0 ? void 0 : _e.toLowerCase()) === "heic") {
+                file = yield (0, convertToPng_1.convertToPng)(file);
+                extName = "png";
+            }
+            const markedFile = yield (0, watermark_1.watermark)(pathToWatermark, file);
+            const thmbOriginal = yield (0, thumbnail_1.thumbnail)(file);
+            const thmbMarked = yield (0, thumbnail_1.thumbnail)(markedFile);
+            const newPhoto = new photo_1.Photo((0, uuid_1.v4)(), albumId, yield (0, s3_1.uploadFileToS3)(thmbMarked, "jpeg"), yield (0, s3_1.uploadFileToS3)(markedFile, extName), yield (0, s3_1.uploadFileToS3)(thmbOriginal, "jpeg"), yield (0, s3_1.uploadFileToS3)(file, extName), clients);
+            yield photo_2.PhotoRepository.savePhoto(newPhoto);
+        }));
+        res.json({ message: "Photos are uploading." });
     }
     catch (err) {
         next(err);

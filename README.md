@@ -53,3 +53,16 @@
 #### headers: ["authorization"]: access_token
 #### You will get all yours albums
 #
+### [POST] /upload-photos
+#### body: multipart-form
+```json
+{
+  "clients": "42142142144,33213144", // required string of clients
+  "album": "album_id", // required
+  "files": file.jpg, // required at least 1 file
+  "files": file2.png, // required at least 1 file
+}
+```
+#### headers: ["authorization"]: access_token
+#### Allow you to upload files to S3 from client side of application
+#

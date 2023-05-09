@@ -19,26 +19,26 @@ export class AlbumValidator {
     }
   };
 
-  //   static uploadPhotosToAlbumBody: RequestHandler = (req, res, next) => {
-  //     const bodySchema = Joi.object({
-  //       clients: Joi.string().required(),
-  //       album: Joi.string().required(),
-  //     });
+  static uploadPhotosToAlbumBody: RequestHandler = (req, res, next) => {
+    const bodySchema = Joi.object({
+      clients: Joi.string().required(),
+      album: Joi.string().required(),
+    });
 
-  //     const fileSchema = Joi.array().required().label("files");
+    const fileSchema = Joi.array().required().label("files");
 
-  //     try {
-  //       const valueBody = bodySchema.validate(req.body);
-  //       if (valueBody.error?.message)
-  //         throw Boom.badData(valueBody.error?.message);
+    try {
+      const valueBody = bodySchema.validate(req.body);
+      if (valueBody.error?.message)
+        throw Boom.badData(valueBody.error?.message);
 
-  //       const valueFile = fileSchema.validate(req.files);
-  //       if (valueFile.error?.message)
-  //         throw Boom.badData(valueFile.error?.message);
+      const valueFile = fileSchema.validate(req.files);
+      if (valueFile.error?.message)
+        throw Boom.badData(valueFile.error?.message);
 
-  //       next();
-  //     } catch (err) {
-  //       next(err);
-  //     }
-  //   };
+      next();
+    } catch (err) {
+      next(err);
+    }
+  };
 }

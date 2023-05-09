@@ -59,17 +59,48 @@ export interface CreateAlbumRequest extends Request {
 }
 
 export interface CreateAlbumResponse {
-  message: string
-  album: Album
+  message: string;
+  album: Album;
 }
 
 export interface GetAlbumByIdResponse {
-  data: AlbumWithPhotos
+  data: AlbumWithPhotos;
 }
 
 export interface GetAllAlbumsResponse {
-  data: Album[]
+  data: Album[];
 }
+
+export interface UploadPhotosResponse {
+  message: string;
+}
+
+export interface UploadPhotosRequest extends Request {
+  body: {
+    album: string;
+    clients: string;
+  };
+}
+
+export interface File {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  buffer: Buffer;
+  size: number;
+}
+
+export interface NewPhoto {
+  photoId: string;
+  unlockedPhotoUrl: string;
+  unlockedThumbnailUrl: string;
+  lockedPhotoUrl: string;
+  lockedThumbnailUrl: string;
+  albumId: string;
+  clients: string | null;
+}
+
 export interface TypedResponse<ResBody> extends Response {
   json: Send<ResBody, this>;
 }

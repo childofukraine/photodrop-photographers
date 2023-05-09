@@ -1,5 +1,6 @@
 import Router from "express";
 import { Controller } from "../controller/controller";
+import { upload } from "../libs/multer";
 import { isAuthorized } from "../middlewares/isAuthorized";
 import { AlbumValidator } from "../validators/albumValidator";
 import { AuthValidator } from "../validators/authValidators";
@@ -21,3 +22,10 @@ router.post(
 );
 router.get("/get-album/:albumId", isAuthorized, Controller.getAlbumById);
 router.get("/all-albums", isAuthorized, Controller.getAllAlbums);
+router.post(
+  "/upload-photos",
+  isAuthorized,
+  upload.array("files"),
+  AlbumValidator.uploadPhotosToAlbumBody,
+  Controller.uploadPhotos
+);

@@ -2,6 +2,7 @@ import { RequestHandler } from "express";
 import Boom from "@hapi/boom";
 import bcryptjs from "bcryptjs";
 import { v4 as uuid } from "uuid";
+import path from "path";
 import {
   LogInRequest,
   AccessTokenInResponse,
@@ -14,6 +15,9 @@ import {
   CreateAlbumResponse,
   GetAlbumByIdResponse,
   GetAllAlbumsResponse,
+  UploadPhotosRequest,
+  UploadPhotosResponse,
+  File,
 } from "../types";
 import { UserRepository } from "../repositories/user";
 import User from "../entities/user";
@@ -23,6 +27,20 @@ import { SessionRepository } from "../repositories/session";
 import { getUserIdFromToken } from "../libs/getUserIdFromToken";
 import { Album } from "../entities/album";
 import { AlbumRepository } from "../repositories/album";
+import { watermark } from "../libs/watermark";
+import { thumbnail } from "../libs/thumbnail";
+import { convertToPng } from "../libs/convertToPng";
+import { Photo } from "../entities/photo";
+import { uploadFileToS3 } from "../libs/s3";
+import { PhotoRepository } from "../repositories/photo";
+
+const pathToWatermark = path.join(
+  __dirname,
+  "..",
+  "..",
+  "/templates",
+  "watermark_template.svg"
+);
 
 export class Controller {
   static getAllUsers: RequestHandler = async (
@@ -225,6 +243,47 @@ export class Controller {
       if (!albums) throw Boom.notFound();
 
       res.json({ data: albums });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  static uploadPhotos: RequestHandler = async (
+    req: UploadPhotosRequest,
+    res: TypedResponse<UploadPhotosResponse>,
+    next
+  ) => {
+    const albumId = req.body.album;
+    const { clients } = req.body;
+    const files = req.files as File[];
+
+    try {
+      files.forEach(async (f) => {
+        let file = f.buffer;
+        let extName = f.originalname.split(".").pop()?.toLowerCase();
+
+        if (f.originalname.split(".").pop()?.toLowerCase() === "heic") {
+          file = await convertToPng(file);
+          extName = "png";
+        }
+
+        const markedFile = await watermark(pathToWatermark, file);
+        const thmbOriginal = await thumbnail(file);
+        const thmbMarked = await thumbnail(markedFile);
+
+        const newPhoto = new Photo(
+          uuid(),
+          albumId,
+          await uploadFileToS3(thmbMarked, "jpeg"),
+          await uploadFileToS3(markedFile, extName!),
+          await uploadFileToS3(thmbOriginal, "jpeg"),
+          await uploadFileToS3(file, extName!),
+          clients
+        );
+
+        await PhotoRepository.savePhoto(newPhoto);
+      });
+      res.json({ message: "Photos are uploading." });
     } catch (err) {
       next(err);
     }
